@@ -30,9 +30,9 @@ const Login = () => {
 
     try {
       // Use the login function from api.js
-      const data = await login({ 
-        email: formData.email, 
-        password: formData.password 
+      const data = await login({
+        email: formData.email,
+        password: formData.password
       });
 
       // Store token in localStorage
@@ -43,10 +43,13 @@ const Login = () => {
 
       // Reset form and navigate to home page
       setFormData({ email: '', password: '' });
-      navigate('/'); 
+      navigate('/');
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Login failed!'); // Better error handling
+
+      // Extract backend error message or provide a generic fallback
+      const errorMessage = err.response?.data?.message || 'Login failed!';
+      setError(errorMessage); // Display backend error message
     } finally {
       setLoading(false);
     }

@@ -13,6 +13,7 @@ import Login from "./components/Login";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import FreeBooks from "./components/FreeBooks";
+import Dashboard from "./pages/Dashboard"; // Import the new Dashboard component
 
 const App = () => {
   return (
@@ -30,6 +31,7 @@ const App = () => {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/free-books" element={<FreeBooks />} />
+          <Route path="/dashboard" element={<Dashboard />} /> {/* New Dashboard route */}
           <Route
             path="*"
             element={

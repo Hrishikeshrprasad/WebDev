@@ -8,4 +8,5 @@ const BookSchema = new mongoose.Schema({
   description: { type: String },
 });
 
-module.exports = mongoose.model('Book', BookSchema);
+// Export the model, ensuring it is not redefined
+module.exports = mongoose.models.Book || mongoose.model('Book', BookSchema);

@@ -1,40 +1,40 @@
-const express = require('express');
 const mongoose = require('mongoose');
-const authRoutes = require('./routes/authRoutes');
-const cors = require('cors');
-const bookRoutes = require('./routes/bookRoutes');
-require('dotenv').config();  // Ensure you are loading environment variables
 
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-// Middleware
-app.use(cors());  // Enable CORS for all origins (so frontend can access the backend)
-app.use(express.json());  // Parse JSON request bodies
-
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/bookStore', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000,  // Increase the timeout to 30 seconds
-})
-  .then(() => {
-    console.log('Connected to MongoDB');
-  })
-  .catch((err) => {
-    console.error('Error connecting to MongoDB:', err.message);
-  });
-
-// Routes
-app.get('/', (req, res) => {
-  res.send('Backend is working!');
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: [true, 'Username is required'],
+    unique: true,
+    trim: true,
+  },
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true,
+    trim: true,
+    match: [/.+\@.+\..+/, 'Please enter a valid email address'], // Validation for email format
+  },
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    minlength: [6, 'Password must be at least 6 characters long'], // Minimum length validation
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false, // Default value is false for regular users
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-// API Routes
-app.use('/api/books', bookRoutes);  // Route for books API
-app.use('/api/auth', authRoutes);   // Route for authentication API
+// Add a method to the schema for additional functionality (optional, e.g., password hashing)
+// Example:
+// userSchema.methods.isValidPassword = function (password) {
+//   return bcrypt.compare(password, this.password);
+// };
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;
