@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Optional: Set smooth transition for color changes */
+  html {
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Default light mode styles */
+  body {
+    @apply bg-white text-gray-900; /* Using Tailwind utilities */
+  }
+
+  /* Dark mode styles */
+  .dark body {
+    @apply bg-gray-900 text-gray-100; /* Using Tailwind utilities for consistency */
+  }
+
+  /* Optional: Ensure smooth transition on background for all elements */
+  * {
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
