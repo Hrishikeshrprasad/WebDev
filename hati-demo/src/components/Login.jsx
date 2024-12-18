@@ -13,13 +13,16 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // Password visibility toggle
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+
+    // Reset error message when user types
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -29,27 +32,30 @@ const Login = () => {
     setSuccess(false);
 
     try {
-      // Use the login function from api.js
       const data = await login({
         email: formData.email,
         password: formData.password
       });
 
-      // Store token in localStorage
+      // Store token and role in localStorage
       localStorage.setItem('token', data.token);
+      localStorage.setItem('username', data.username);
+      localStorage.setItem('userRole', data.role); // Assume backend sends role
 
       setSuccess(true);
       alert('Login Successful!');
 
-      // Reset form and navigate to home page
-      setFormData({ email: '', password: '' });
-      navigate('/');
+      // Redirect based on user role
+      if (data.role === 'admin') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       console.error(err);
 
-      // Extract backend error message or provide a generic fallback
       const errorMessage = err.response?.data?.message || 'Login failed!';
-      setError(errorMessage); // Display backend error message
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -62,6 +68,7 @@ const Login = () => {
         {error && <p className="text-red-500 mb-4">{error}</p>}
         {success && <p className="text-green-500 mb-4">Login successful!</p>}
         <form onSubmit={handleSubmit}>
+          {/* Email Input */}
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-white" htmlFor="email">
               Email
@@ -78,6 +85,7 @@ const Login = () => {
             />
           </div>
 
+          {/* Password Input */}
           <div className="mb-6">
             <label className="block text-gray-700 text-sm font-bold mb-2 dark:text-white" htmlFor="password">
               Password
@@ -98,18 +106,45 @@ const Login = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-3 text-gray-500 focus:outline-none"
               >
-                {showPassword ? 'Hide' : 'Show'}
+                {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
           </div>
 
+          {/* Submit Button */}
           <div className="flex items-center justify-between">
             <button
               type="submit"
               className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:bg-blue-600"
               disabled={loading}
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? (
+                <div className="flex justify-center items-center">
+                  <svg
+                    className="animate-spin h-5 w-5 mr-2 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                  Logging in...
+                </div>
+              ) : (
+                'Login'
+              )}
             </button>
           </div>
         </form>

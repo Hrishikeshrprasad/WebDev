@@ -1,67 +1,90 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const Book = require('../models/book'); // Assuming the Book model exists
-const User = require('../models/User'); // To check for admin
+const { body, validationResult } = require('express-validator');
+const Book = require('../models/book');
+const User = require('../models/User');
+const { verifyAdmin } = require('../middlewares/auth');
+const { errors, success } = require('../constants/messages');
+
 const router = express.Router();
 
-// Middleware to check if the user is admin
-const verifyAdmin = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) {
-    return res.status(401).json({ message: 'No token provided' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded.isAdmin) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-    next();
-  } catch (err) {
-    res.status(401).json({ message: 'Invalid token' });
-  }
-};
-
 // Admin login route
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const admin = await User.findOne({ email, isAdmin: true }); // Only allow admin users
-    if (!admin) {
-      return res.status(401).json({ message: 'Admin not found' });
+router.post(
+  '/login',
+  [
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('password').notEmpty().withMessage('Password is required'),
+  ],
+  async (req, res) => {
+    const validationErrors = validationResult(req);
+    if (!validationErrors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: validationErrors.array() });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, admin.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    const { email, password } = req.body;
+
+    try {
+      const admin = await User.findOne({ email, isAdmin: true });
+      if (!admin) {
+        return res.status(401).json({ success: false, message: errors.invalidCredentials });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, admin.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ success: false, message: errors.invalidCredentials });
+      }
+
+      const token = jwt.sign(
+        { userId: admin._id, email: admin.email, isAdmin: true },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+      );
+
+      res.status(200).json({
+        success: true,
+        token,
+        admin: { id: admin._id, email: admin.email },
+        message: success.adminLogin,
+      });
+    } catch (err) {
+      console.error('Error during admin login:', err.message);
+      res.status(500).json({ success: false, message: errors.serverError });
     }
-
-    const token = jwt.sign(
-      { userId: admin._id, email: admin.email, isAdmin: true },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.status(200).json({ token, message: 'Admin login successful' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
   }
-});
+);
 
 // Add a book (admin only)
-router.post('/books', verifyAdmin, async (req, res) => {
-  const { title, author, description } = req.body;
+router.post(
+  '/books',
+  verifyAdmin,
+  [
+    body('title').notEmpty().withMessage('Title is required'),
+    body('author').notEmpty().withMessage('Author is required'),
+    body('description').optional().isLength({ max: 500 }).withMessage('Description must be 500 characters or less'),
+  ],
+  async (req, res) => {
+    const validationErrors = validationResult(req);
+    if (!validationErrors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: validationErrors.array() });
+    }
 
-  try {
-    const newBook = new Book({ title, author, description });
-    await newBook.save();
-    res.status(201).json({ message: 'Book added successfully', book: newBook });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const { title, author, description } = req.body;
+
+    try {
+      const newBook = new Book({ title, author, description });
+      await newBook.save();
+      res.status(201).json({
+        success: true,
+        message: success.bookAdded,
+        book: newBook,
+      });
+    } catch (err) {
+      console.error('Error adding book:', err.message);
+      res.status(500).json({ success: false, message: errors.addBookFailed });
+    }
   }
-});
+);
 
 // Remove a book (admin only)
 router.delete('/books/:id', verifyAdmin, async (req, res) => {
@@ -70,11 +93,12 @@ router.delete('/books/:id', verifyAdmin, async (req, res) => {
   try {
     const deletedBook = await Book.findByIdAndDelete(id);
     if (!deletedBook) {
-      return res.status(404).json({ message: 'Book not found' });
+      return res.status(404).json({ success: false, message: errors.bookNotFound });
     }
-    res.status(200).json({ message: 'Book removed successfully' });
+    res.status(200).json({ success: true, message: success.bookRemoved });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Error removing book:', err.message);
+    res.status(500).json({ success: false, message: errors.removeBookFailed });
   }
 });
 

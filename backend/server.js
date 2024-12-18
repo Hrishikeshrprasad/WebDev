@@ -13,14 +13,14 @@ const PORT = process.env.PORT || 5000;
 app.use(cors()); // Enable CORS for cross-origin requests
 app.use(express.json()); // Parse incoming JSON request bodies
 
-// Test Route
+// Root route for health check
 app.get('/', (req, res) => {
-  res.send('Backend is working!');
+  res.status(200).json({ message: 'Server is running successfully!' });
 });
 
-// Add a health check/test endpoint for API
-app.get('/api/auth/test', (req, res) => {
-  res.status(200).json({ message: 'Test route is working!' });
+// Test Route
+app.get('/api/test', (req, res) => {
+  res.status(200).json({ message: 'Test endpoint is working!' });
 });
 
 // API Routes
@@ -43,12 +43,12 @@ mongoose
     process.exit(1); // Exit the app if unable to connect to the database
   });
 
-// Global 404 Handler for undefined routes
+// Handle invalid routes (404)
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Error handler middleware (optional for debugging)
+// Global error handler middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'An internal server error occurred' });
@@ -56,5 +56,5 @@ app.use((err, req, res, next) => {
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
