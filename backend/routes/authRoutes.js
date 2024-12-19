@@ -120,7 +120,7 @@ router.get('/user', async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findById(decoded.userId).select('-password').populate('booksRead');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }

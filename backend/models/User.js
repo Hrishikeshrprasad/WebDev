@@ -23,6 +23,12 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false, // Default value is false for regular users
   },
+  booksRead: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Book',
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,
